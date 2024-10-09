@@ -186,6 +186,7 @@ const int MS_PER_CYCLE = 10000;		// 10000 milliseconds = 10 seconds
 int		ActiveButton;			// current button that is down
 GLuint	AxesList;				// list to hold the axes
 int		AxesOn;					// != 0 means to draw the axes
+int		NauseaOn;
 GLuint	HeliList;				// object display list
 GLuint	PropList;
 int		DebugOn;				// != 0 means to print debugging info
@@ -195,6 +196,7 @@ int		DepthFightingOn;		// != 0 means to force the creation of z-fighting
 int		MainWindow;				// window id for main graphics window
 int		NowColor;				// index into Colors[ ]
 int		NowProjection;		// ORTHO or PERSP
+int		NowInside;
 float	Scale;					// scaling factor
 int		ShadowsOn;				// != 0 means to turn shadows on
 float	Time;					// used for animation, this has a value between 0. and 1.
@@ -487,15 +489,22 @@ Display( )
 
 	// draw the box object by calling up its display list:
 
+	if (NauseaOn != 0) {
+		glRotatef(-200 * 360.f * Time, 0., 1., 0.);
+	}
+
+
 	glCallList( HeliList );
 	glPushMatrix();
 	glTranslatef(0.f, 2.9f, -2.f);
+	glRotatef(20 * 360.f * Time, 0., 1., 0.);
 	glRotatef(90.f, 1.f, 0.f, 0.f);
 	glScalef(5.f, 5.f, 1.f);
 	glCallList( PropList );
 	glPopMatrix();
 	glPushMatrix();
 	glTranslatef(.5f, 2.5f, 9.f);
+	glRotatef(40 * 360.f * Time, 1., 0., 0.);
 	glRotatef(90.f, 0.f, 1.f, 0.f);
 	glScalef(3.f, 3.f, 1.f);
 	glCallList(PropList);
@@ -609,6 +618,18 @@ DoDepthMenu( int id )
 
 	glutSetWindow( MainWindow );
 	glutPostRedisplay( );
+}
+
+
+void
+DoNauseaMenu( int id ) {
+	NauseaOn = id;
+}
+
+
+void
+DoInsideMenu( int id ) {
+	NowInside = id;
 }
 
 
@@ -938,9 +959,19 @@ InitMenus( )
 	glutAddMenuEntry( "Orthographic",  ORTHO );
 	glutAddMenuEntry( "Perspective",   PERSP );
 
+	int nauseamenu = glutCreateMenu( DoNauseaMenu );
+	glutAddMenuEntry( "Off", 0 );
+	glutAddMenuEntry( "On", 1 );
+
+	int insidemenu = glutCreateMenu( DoInsideMenu );
+	glutAddMenuEntry( "Outside", 0 );
+	glutAddMenuEntry( "Inside", 1 );
+
 	int mainmenu = glutCreateMenu( DoMainMenu );
 	glutAddSubMenu(   "Axes",          axesmenu);
 	glutAddSubMenu(   "Axis Colors",   colormenu);
+	glutAddSubMenu(   "Nausea",        nauseamenu);
+	glutAddSubMenu(   "Amogus",        insidemenu);
 
 #ifdef DEMO_DEPTH_BUFFER
 	glutAddSubMenu(   "Depth Buffer",  depthbuffermenu);
@@ -1101,7 +1132,8 @@ void
 Reset( )
 {
 	ActiveButton = 0;
-	AxesOn = 1;
+	AxesOn = 0;
+	NauseaOn = 0;
 	DebugOn = 0;
 	DepthBufferOn = 1;
 	DepthFightingOn = 0;
@@ -1110,6 +1142,7 @@ Reset( )
 	ShadowsOn = 0;
 	NowColor = YELLOW;
 	NowProjection = PERSP;
+	NowInside = 0;
 	Xrot = Yrot = 0.;
 }
 
