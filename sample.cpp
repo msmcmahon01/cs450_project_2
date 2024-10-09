@@ -447,8 +447,8 @@ Display( )
 
 	// rotate the scene:
 
-	glRotatef( (GLfloat)Yrot, 0.f, 1.f, 0.f );
 	glRotatef( (GLfloat)Xrot, 1.f, 0.f, 0.f );
+	glRotatef( (GLfloat)Yrot, 0.f, 1.f, 0.f );
 
 	// uniformly scale the scene:
 
@@ -488,9 +488,18 @@ Display( )
 	// draw the box object by calling up its display list:
 
 	glCallList( HeliList );
-	//glPushMatrix();
+	glPushMatrix();
+	glTranslatef(0.f, 2.9f, -2.f);
+	glRotatef(90.f, 1.f, 0.f, 0.f);
+	glScalef(5.f, 5.f, 1.f);
 	glCallList( PropList );
-	//glPopMatrix();
+	glPopMatrix();
+	glPushMatrix();
+	glTranslatef(.5f, 2.5f, 9.f);
+	glRotatef(90.f, 0.f, 1.f, 0.f);
+	glScalef(3.f, 3.f, 1.f);
+	glCallList(PropList);
+	glPopMatrix();
 
 #ifdef DEMO_Z_FIGHTING
 	if( DepthFightingOn != 0 )
@@ -863,6 +872,9 @@ InitLists( )
 	//	width BLADE_WIDTH centered at (0.,0.,0.) in the XY plane
 
 	glBegin(GL_TRIANGLES);
+
+	glColor3f(1.f, 1.f, 1.f);
+
 	glVertex2f(BLADE_RADIUS, BLADE_WIDTH / 2.);
 	glVertex2f(0., 0.);
 	glVertex2f(BLADE_RADIUS, -BLADE_WIDTH / 2.);
@@ -873,7 +885,6 @@ InitLists( )
 	glEnd();
 	glPopMatrix();
 	glEndList();
-
 
 	// create the axes:
 
