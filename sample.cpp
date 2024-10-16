@@ -189,6 +189,7 @@ int		AxesOn;					// != 0 means to draw the axes
 int		NauseaOn;
 GLuint	HeliList;				// object display list
 GLuint	PropList;
+GLuint	ObjectList;
 int		DebugOn;				// != 0 means to print debugging info
 int		DepthCueOn;				// != 0 means to use intensity depth cueing
 int		DepthBufferOn;			// != 0 means to use the z-buffer
@@ -322,6 +323,7 @@ TimeOfDaySeed( )
 //#include "keytime.cpp"
 //#include "glslprogram.cpp"
 //#include "vertexbufferobject.cpp"
+#include "functions.cpp"
 #include "heli.550"
 
 
@@ -445,18 +447,23 @@ Display( )
 
 	// set the eye position, look-at position, and up-vector:
 
-	gluLookAt( 0.f, 0.f, 3.f,     0.f, 0.f, 0.f,     0.f, 1.f, 0.f );
+	if ( NowInside != 0 ) {
+		gluLookAt(-0.4f, 1.8f, -4.9f, -0.4f, 1.8f, -10.f, 0.f, 1.f, 0.f);
+	}
+	else {
+		gluLookAt( 0.f, 0.f, 3.f,     0.f, 0.f, 0.f,     0.f, 1.f, 0.f );
 
-	// rotate the scene:
+		// rotate the scene:
 
-	glRotatef( (GLfloat)Xrot, 1.f, 0.f, 0.f );
-	glRotatef( (GLfloat)Yrot, 0.f, 1.f, 0.f );
+		glRotatef( (GLfloat)Xrot, 1.f, 0.f, 0.f );
+		glRotatef( (GLfloat)Yrot, 0.f, 1.f, 0.f );
 
-	// uniformly scale the scene:
+		// uniformly scale the scene:
 
-	if( Scale < MINSCALE )
-		Scale = MINSCALE;
-	glScalef( (GLfloat)Scale, (GLfloat)Scale, (GLfloat)Scale );
+		if( Scale < MINSCALE )
+			Scale = MINSCALE;
+		glScalef( (GLfloat)Scale, (GLfloat)Scale, (GLfloat)Scale );
+	}
 
 	// set the fog parameters:
 
@@ -508,6 +515,13 @@ Display( )
 	glRotatef(90.f, 0.f, 1.f, 0.f);
 	glScalef(3.f, 3.f, 1.f);
 	glCallList(PropList);
+	glPopMatrix();
+	glPushMatrix();
+	glTranslatef(0, 2, -20);
+	glRotatef(4 * 360.f * Time, 1., 0., 0.);
+	glRotatef(4 * 360.f * Time, 0., 1., 0.);
+	glRotatef(4 * 360.f * Time, 0., 0., -1.);
+	glCallList( ObjectList );
 	glPopMatrix();
 
 #ifdef DEMO_Z_FIGHTING
@@ -870,7 +884,7 @@ InitLists( )
 				n[1] += .25;
 				if (n[1] > 1.)
 					n[1] = 1.;
-				glColor3f(0., n[1], 0.);
+				glColor3f(.565 * n[1], .392 * n[1], .655 * n[1]);
 
 				glVertex3f(p0->x, p0->y, p0->z);
 				glVertex3f(p1->x, p1->y, p1->z);
@@ -906,6 +920,158 @@ InitLists( )
 	glEnd();
 	glPopMatrix();
 	glEndList();
+
+	ObjectList = glGenLists( 1 );
+	glNewList( ObjectList, GL_COMPILE );
+
+	glPushMatrix();
+
+	glTranslatef(0.f, 0.5f, 5.f);
+
+	int verticies = 8; // does not go over 400-something :)
+	int tube_thinness = 5;
+
+	// Bell
+	TrmptBell(0.f, 0.f, -0.5f, -4.f, verticies, tube_thinness, 0.929f, 0.996f, 1.f);
+
+	// Upper bell pipe
+	TrmptTubeXY(0.f, 0.f, -4.f, -10.f, verticies, tube_thinness, 0.776f, 0.988f, 1.f);
+
+	// Lower bell pipe
+	TrmptTubeXY(-0.25f, -2.f, -8.f, -10.f, verticies, tube_thinness, 0.776f, 0.988f, 1.f);
+	glPushMatrix();
+	glRotatef(180.f, 1.f, 0.f, 0.f);
+	glTranslatef(-0.5f, 2.f, 8.f);
+	TrmptTubeCurveQuarter(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(0.5f, -2.f, -8.f);
+	//glRotatef(-180.f, 1.f, 0.f, 0.f);
+	glPopMatrix();
+
+	// Bell pipe curve
+	glPushMatrix();
+	glRotatef(-7.f, 0.f, 0.f, 1.f);
+	glRotatef(90.f, 0.f, 0.f, 1.f);
+	glTranslatef(-1.f, 0.f, -10.f);
+	TrmptTubeCurve(0.2f, 1.f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(1.f, 0.f, 10.f);
+	//glRotatef(-90.f, 0.f, 0.f, 1.f);
+	//glRotatef(7.f, 0.f, 0.f, 1.f);
+	glPopMatrix();
+
+	// Valves
+	// 1st
+	TrmptTubeXZ(-0.5f, 0.5f, -2.75f, -7.75f, verticies, tube_thinness - 1.f, 0.847f, 0.478f, 1.f);
+	// 2nd
+	TrmptTubeXZ(-0.5f, 0.5f, -2.75f, -7.f, verticies, tube_thinness - 1.f, 0.847f, 0.478f, 1.f);
+	// 3rd
+	TrmptTubeXZ(-0.5f, 0.5f, -2.75f, -6.25f, verticies, tube_thinness - 1.f, 0.847f, 0.478f, 1.f);
+
+	// Upper lead pipe
+	TrmptTubeXY(-1.f, 0.f, -3.f, -12.f, verticies, tube_thinness, 0.776f, 0.988f, 1.f);
+
+	// Lower lead pipe
+	TrmptTubeXY(-0.75f, -2.f, -3.f, -6.f, verticies, tube_thinness, 0.776f, 0.988f, 1.f);
+	glPushMatrix();
+	glRotatef(180.f, 0.f, 0.f, 1.f);
+	glTranslatef(0.5f, 2.f, -6.f);
+	TrmptTubeCurveQuarter(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(-0.5f, -2.f, 6.f);
+	//glRotatef(-180.f, 0.f, 0.f, 1.f);
+	glPopMatrix();
+
+	// Lead pipe curve
+	glPushMatrix();
+	glRotatef(7.f, 0.f, 0.f, 1.f);
+	glRotatef(180.f, 1.f, 0.f, 0.f);
+	glRotatef(90.f, 0.f, 0.f, 1.f);
+	glTranslatef(0.9f, 1.f, 3.f);
+	TrmptTubeCurve(0.2f, 1.f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(-0.9f, -1.f, -3.f);
+	//glRotatef(-90.f, 0.f, 0.f, 1.f);
+	//glRotatef(-180.f, 1.f, 0.f, 0.f);
+	//glRotatef(-7.f, 0.f, 0.f, 1.f);
+	glPopMatrix();
+
+	// Valve connectors
+	// 1st -> 2nd
+	TrmptTubeXY(-0.45f, -1.f, -7.f, -7.75f, verticies, tube_thinness + 2.f, 1.f, 0.584f, 0.349f);
+	TrmptTubeXY(-0.5f, -1.75f, -7.f, -7.75f, verticies, tube_thinness + 1.5f, 1.f, 0.584f, 0.349f);
+	TrmptTubeXY(-0.45f, -2.5f, -7.f, -7.75f, verticies, tube_thinness + 2.f, 1.f, 0.584f, 0.349f);
+	// 2nd -> 3rd
+	TrmptTubeXY(-0.5f, -1.f, -6.25f, -7.f, verticies, tube_thinness + 2.f, 1.f, 0.584f, 0.349f);
+	TrmptTubeXY(-0.5f, -2.f, -6.25f, -7.f, verticies, tube_thinness + 1.5f, 1.f, 0.584f, 0.349f);
+	TrmptTubeXY(-0.5f, -2.5f, -6.25f, -7.f, verticies, tube_thinness + 2.f, 1.f, 0.584f, 0.349f);
+
+	// Valve connector curves
+	// 1st
+	glPushMatrix();
+	glRotatef(180.f, 1.f, 0.f, 0.f);
+	glRotatef(180.f, 0.f, 0.f, 1.f);
+	glTranslatef(0.5f, -2.25f, 8.f);
+	TrmptTubeCurveQuarter(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(-0.5f, 2.25f, -8.f);
+	//glRotatef(-180.f, 0.f, 0.f, 1.f);
+	//glRotatef(-180.f, 1.f, 0.f, 0.f);
+	glPopMatrix();
+	glPushMatrix();
+	glRotatef(180.f, 1.f, 0.f, 0.f);
+	glRotatef(180.f, 0.f, 0.f, 1.f);
+	glTranslatef(0.5f, -1.75f, 8.f);
+	TrmptTubeCurveQuarter(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(-0.5f, 1.75f, -8.f);
+	//glRotatef(-180.f, 0.f, 0.f, 1.f);
+	//glRotatef(-180.f, 1.f, 0.f, 0.f);
+	glPopMatrix();
+	// 3rd
+	glPushMatrix();
+	glTranslatef(-0.5f, -2.25f, -6.f);
+	TrmptTubeCurveQuarter(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(0.5f, 2.25f, 6.f);
+	glPopMatrix();
+	glPushMatrix();
+	glTranslatef(-0.5f, -1.75f, -6.f);
+	TrmptTubeCurveQuarter(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(0.5f, 1.75f, 6.f);
+	glPopMatrix();
+
+	// Slides
+	// 3rd
+	TrmptTubeXY(-0.25f, -2.25f, -3.5f, -6.f, verticies, tube_thinness, 1.f, 1.f, 1.f);
+	TrmptTubeXY(-0.25f, -1.75f, -3.5f, -6.f, verticies, tube_thinness, 1.f, 1.f, 1.f);
+	glPushMatrix();
+	glRotatef(-90.f, 0.f, 0.f, 1.f);
+	glTranslatef(2.f, -0.75f, -9.5f);
+	TrmptTubeCurve(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(-2.f, 0.75f, 9.5f);
+	//glRotatef(90.f, 0.f, 0.f, 1.f);
+	glPopMatrix();
+	// 2nd
+	glPushMatrix();
+	glRotatef(-90.f, 0.f, 0.f, 1.f);
+	glRotatef(-45.f, 1.f, 0.f, 0.f);
+	glTranslatef(2.f, 4.5f, -5.5f);
+	TrmptTubeCurve(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(-2.f, -4.5f, 5.5f);
+	//glRotatef(45.f, 1.f, 0.f, 0.f);
+	//glRotatef(90.f, 0.f, 0.f, 1.f);
+	glPopMatrix();
+	// 1st
+	TrmptTubeXY(-0.75f, -2.25f, -8.f, -9.5f, verticies, tube_thinness, 1.f, 1.f, 1.f);
+	TrmptTubeXY(-0.75f, -1.75f, -8.f, -9.5f, verticies, tube_thinness, 1.f, 1.f, 1.f);
+	glPushMatrix();
+	glRotatef(90.f, 0.f, 0.f, 1.f);
+	glRotatef(180.f, 0.f, 1.f, 0.f);
+	glTranslatef(2.f, 0.25f, 3.5f);
+	TrmptTubeCurve(0.2f, 0.25f, verticies, verticies * 2, 0.478f, 1.f, 0.514f);
+	//glTranslatef(-2.f, -0.25f, -4.f);
+	//glRotatef(-180.f, 0.f, 1.f, 0.f);
+	//glRotatef(-90.f, 0.f, 0.f, 1.f);
+	glPopMatrix();
+
+	glPopMatrix();
+	glEndList();
+
+
 
 	// create the axes:
 
@@ -1018,6 +1184,16 @@ Keyboard( unsigned char c, int x, int y )
 		case ESCAPE:
 			DoMainMenu( QUIT );	// will not return here
 			break;				// happy compiler
+
+		case 'v':
+		case 'V':
+			NowInside = !NowInside;
+			break;
+
+		case 'n':
+		case 'N':
+			NauseaOn = !NauseaOn;
+			break;
 
 		default:
 			fprintf( stderr, "Don't know what to do with keyboard hit: '%c' (0x%0x)\n", c, c );
